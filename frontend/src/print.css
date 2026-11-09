@@ -1,0 +1,26 @@
+@page {
+  margin: 14mm;
+}
+.sidebar,
+.topbar,
+.page-actions,
+.page-footer,
+.modal-backdrop,
+.toast-region,
+.bottom-reassurance {
+  display: none !important;
+}
+.main-shell {
+  margin: 0;
+}
+.main-content {
+  padding: 0;
+}
+.panel,
+.metric-card {
+  break-inside: avoid;
+  box-shadow: none;
+}
+body {
+  background: white;
+}

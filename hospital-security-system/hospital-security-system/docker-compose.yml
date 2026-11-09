@@ -1,7 +1,20 @@
-version: '3'
-
+# Compatibility entry point; use the root Compose file for full configuration.
 services:
   app:
-    build: .
+    build:
+      context: ../..
+      dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    environment:
+      APP_ENV: production
+      DEMO_MODE: "false"
+      DATA_DIR: /data
+      SECRET_KEY: ${SECRET_KEY:?Set a strong SECRET_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Set a base64 32-byte ENCRYPTION_KEY}
+      TRUSTED_HOSTS: ${TRUSTED_HOSTS:-localhost,127.0.0.1}
+    volumes:
+      - medguard_data:/data
+    restart: unless-stopped
+volumes:
+  medguard_data:

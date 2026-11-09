@@ -216,3 +216,17 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# MedGuard runtime data and frontend dependencies
+node_modules/
+frontend/dist/
+playwright-report/
+test-results/
+*.tsbuildinfo
+hospital-security-system/hospital-security-system/data/
+.env.*
+!.env.example
+
+# React source helpers are not Python's generated lib/ directory.
+!frontend/src/lib/
+!frontend/src/lib/**

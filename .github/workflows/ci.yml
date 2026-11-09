@@ -1,0 +1,49 @@
+name: Build and test
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: hospital-security-system/hospital-security-system/requirements*.txt
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          .venv/bin/pip install -r hospital-security-system/hospital-security-system/requirements-dev.txt
+          npm ci
+      - name: Python checks
+        run: |
+          .venv/bin/ruff check hospital-security-system/hospital-security-system scripts/configure-production.py
+          .venv/bin/ruff format --check hospital-security-system/hospital-security-system scripts/configure-production.py
+          .venv/bin/python -m pytest -q
+      - name: Frontend checks
+        run: |
+          npm run format:check
+          npm test
+          npm run build
+          npm audit --audit-level=high
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium
+      - name: Browser workflows and accessibility
+        run: npm run test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-test-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
