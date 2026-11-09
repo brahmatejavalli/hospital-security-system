@@ -1,0 +1,7 @@
+node_modules/
+frontend/dist/
+.cache/
+playwright-report/
+test-results/
+package-lock.json
+hospital-security-system/hospital-security-system/data/
