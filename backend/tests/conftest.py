@@ -1,7 +1,5 @@
 import os
-import sys
 import tempfile
-from pathlib import Path
 
 # Isolate every test run from the demonstration workspace and all user files.
 TEST_DIRECTORY = tempfile.TemporaryDirectory(prefix="medguard-tests-")
@@ -11,7 +9,6 @@ os.environ["APP_ENV"] = "test"
 os.environ["DEMO_MODE"] = "false"
 os.environ.pop("S3_BUCKET", None)
 os.environ.pop("AWS_BUCKET_NAME", None)
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import pytest
 from fastapi.testclient import TestClient

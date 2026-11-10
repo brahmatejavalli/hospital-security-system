@@ -22,5 +22,5 @@ with os.fdopen(descriptor, "w") as handle:
         "AWS_REGION=ap-south-1\n"
     )
 print(
-    "Created .env.production with private permissions. Add your public hostname to TRUSTED_HOSTS. Back up the keys securely and never commit this file."
+    "Created .env.production (mode 600 on POSIX; restrict NTFS ACLs on Windows). Add your public hostname to TRUSTED_HOSTS. Back up the keys securely and never commit this file."
 )

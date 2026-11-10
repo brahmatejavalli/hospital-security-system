@@ -8,12 +8,28 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-BASE_DIR = Path(__file__).resolve().parents[1]
+BACKEND_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = next(
-    (parent for parent in BASE_DIR.parents if (parent / "package.json").is_file()), BASE_DIR
+    (parent for parent in BACKEND_DIR.parents if (parent / "package.json").is_file()), BACKEND_DIR
 )
 load_dotenv(REPO_ROOT / ".env")
-load_dotenv(BASE_DIR / ".env")
+load_dotenv(BACKEND_DIR / ".env")
+
+# Git relocates tracked source, not ignored databases, objects, or local keys.
+# Do not silently initialize a different workspace after a layout upgrade.
+LEGACY_BACKEND_DIR = REPO_ROOT / "hospital-security-system" / "hospital-security-system"
+legacy_env = LEGACY_BACKEND_DIR / ".env"
+legacy_data = LEGACY_BACKEND_DIR / "data"
+if (
+    legacy_env.exists()
+    or legacy_env.is_symlink()
+    or (not os.getenv("DATA_DIR") and (legacy_data.exists() or legacy_data.is_symlink()))
+):
+    raise RuntimeError(
+        "Legacy backend runtime files found. Stop the servers, back up your data and keys, "
+        "and run python scripts/migrate-legacy-layout.py from the repository root. "
+        "See docs/UPGRADING.md. No new default workspace was created."
+    )
 
 ENVIRONMENT = os.getenv("APP_ENV", "development")
 PRODUCTION = ENVIRONMENT == "production"
@@ -21,7 +37,7 @@ DEMO_MODE = os.getenv("DEMO_MODE", "false" if PRODUCTION else "true").lower() ==
 if PRODUCTION and DEMO_MODE:
     raise RuntimeError("DEMO_MODE must be false in production.")
 
-DATA_DIR = Path(os.getenv("DATA_DIR", str(BASE_DIR / "data"))).resolve()
+DATA_DIR = Path(os.getenv("DATA_DIR", str(BACKEND_DIR / "data"))).resolve()
 DATA_DIR.mkdir(parents=True, exist_ok=True, mode=0o700)
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DATA_DIR / 'medguard.db'}")
 SECRET_KEY = os.getenv("SECRET_KEY", "")

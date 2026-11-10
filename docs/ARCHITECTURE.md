@@ -1,5 +1,11 @@
 # Architecture
 
+## Source boundaries
+
+Python application code and tests live in `backend/`; the React application and colocated unit tests live in `frontend/`. Root `scripts/` coordinates the two services, and `e2e/` owns cross-application browser tests. Node dependencies, Python test configuration, and the single Docker/Compose deployment stay at the root. See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for the full file map.
+
+The development launcher runs the API with `backend/` as its working directory. Configuration locates root `.env` and `frontend/dist/` from the repository, while default private state lives in ignored `backend/data/`. The Docker runtime remains `/app` with persistent `/data`. A guarded [layout upgrade](UPGRADING.md) preserves old private state instead of silently generating a different encryption key.
+
 ## Components
 
 ```text

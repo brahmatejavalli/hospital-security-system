@@ -4,4 +4,5 @@ frontend/dist/
 playwright-report/
 test-results/
 package-lock.json
-hospital-security-system/hospital-security-system/data/
+backend/data/
+hospital-security-system/

@@ -48,6 +48,12 @@ MedGuard is a functional reference application for securing hospital record work
 8. **No MFA/SSO or email delivery is configured.** Administrators provision accounts and can reset real member passwords. Users can change their own passwords. Initial/reset passwords must be shared through an approved secure channel; no invitation or recovery email is sent.
 9. **Use a migration plan.** `create_all` initializes a fresh v1 database; it is not a migration engine for pre-existing schemas. Review schema upgrades, storage-provider changes, and key changes before applying them.
 
+## Folder-layout upgrades
+
+Tracked backend source now lives in `backend/`; default private state lives in ignored `backend/data/`. Git does not relocate old ignored databases, ciphertext objects, or `.secrets.json`. Follow [UPGRADING.md](docs/UPGRADING.md), back up the complete workspace, and stop all writers before applying the guarded migration script. It is dry-run by default, refuses destination collisions/custom storage, and does not rotate keys or change database schemas. Never combine a database with another workspace's key file.
+
+POSIX file modes such as `0600` do not enforce equivalent NTFS permissions on Windows. Restrict production configuration and data with appropriate Windows ACLs when using a Windows host.
+
 ## Before using real patient information
 
 - [ ] Disable demo mode and provision named administrator accounts with strong passwords.
