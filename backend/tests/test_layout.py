@@ -1,6 +1,7 @@
 """Regression tests for the flat backend layout and private runtime-file upgrade."""
 
 import importlib.util
+from contextlib import closing
 import json
 import os
 import shutil
@@ -73,9 +74,10 @@ def legacy_workspace(root):
     (data / ".secrets.json").write_text('{"example": "private-key-must-not-be-printed"}')
     (data / "objects" / "record.bin").write_bytes(b"MG01\x00private encrypted object\xff")
     (legacy / ".env").write_text("DEMO_MODE=true\nSECRET_KEY=private-config-must-not-be-printed\n")
-    with sqlite3.connect(data / "medguard.db") as database:
+    with closing(sqlite3.connect(data / "medguard.db")) as database:
         database.execute("CREATE TABLE records (name TEXT)")
         database.execute("INSERT INTO records VALUES ('existing encrypted record')")
+        database.commit()
     return legacy
 
 
@@ -171,7 +173,7 @@ def test_migration_preserves_database_objects_keys_and_configuration(checkout):
         path.relative_to("data"): data for path, data in original.items() if path.parts[0] == "data"
     }
     assert (checkout / "backend" / ".env").read_bytes() == original[Path(".env")]
-    with sqlite3.connect(checkout / "backend" / "data" / "medguard.db") as database:
+    with closing(sqlite3.connect(checkout / "backend" / "data" / "medguard.db")) as database:
         assert database.execute("SELECT name FROM records").fetchone()[0] == (
             "existing encrypted record"
         )
@@ -312,8 +314,8 @@ def test_existing_record_downloads_after_full_layout_upgrade(checkout, upload):
     (legacy_data / ".secrets.json").write_text(
         json.dumps({"jwt": SECRET_KEY, "encryption": ENCRYPTION_KEY})
     )
-    with sqlite3.connect(engine.url.database) as original:
-        with sqlite3.connect(legacy_data / "medguard.db") as backup:
+    with closing(sqlite3.connect(engine.url.database)) as original:
+        with closing(sqlite3.connect(legacy_data / "medguard.db")) as backup:
             original.backup(backup)
     shutil.copytree(DATA_DIR / "objects", legacy_data / "objects")
 

@@ -297,3 +297,29 @@ def test_concurrent_admin_deactivation_keeps_an_active_administrator(admin, user
     assert results.count(401) == 1
     with SessionLocal() as db:
         assert db.query(User).filter(User.role == "admin", User.is_active.is_(True)).count() == 1
+
+
+def test_settings_timezones_work_without_an_operating_system_timezone_database(admin):
+    import zoneinfo
+
+    original_path = zoneinfo.TZPATH
+    try:
+        # Windows has no system IANA database. Exercise the tzdata-package
+        # fallback on Linux too, rather than only relying on a Windows runner.
+        zoneinfo.reset_tzpath(())
+        zoneinfo.ZoneInfo.clear_cache()
+        for timezone in ("UTC", "Asia/Kolkata"):
+            response = admin.patch(
+                "/api/workspace",
+                json={
+                    "name": "Timezone Test Hospital",
+                    "contact_email": "it@hospital.example",
+                    "timezone": timezone,
+                    "session_minutes": 30,
+                },
+            )
+            assert response.status_code == 200, response.text
+            assert response.json()["timezone"] == timezone
+    finally:
+        zoneinfo.reset_tzpath(original_path)
+        zoneinfo.ZoneInfo.clear_cache()
