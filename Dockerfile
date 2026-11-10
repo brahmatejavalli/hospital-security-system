@@ -13,13 +13,13 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     DATA_DIR=/data \
     STATIC_DIR=/app/static
 WORKDIR /app
-COPY hospital-security-system/hospital-security-system/requirements.txt ./requirements.txt
+COPY backend/requirements.txt ./requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt \
     && groupadd --gid 10001 medguard \
     && useradd --uid 10001 --gid 10001 --no-create-home medguard \
     && mkdir -p /data && chown medguard:medguard /data
-COPY hospital-security-system/hospital-security-system/app ./app
-COPY hospital-security-system/hospital-security-system/manage.py ./manage.py
+COPY backend/app ./app
+COPY backend/manage.py ./manage.py
 COPY --from=frontend /build/frontend/dist ./static
 USER 10001:10001
 EXPOSE 8000

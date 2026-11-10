@@ -216,15 +216,14 @@ export function Modal({
           'button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]',
         ) ?? [],
       ).filter(el => el.offsetParent !== null)
-    const timer = window.setTimeout(
-      () =>
-        (
-          element?.querySelector<HTMLElement>('[data-autofocus]') ??
-          focusables()[0] ??
-          element
-        )?.focus(),
-      30,
-    )
+    const timer = window.setTimeout(() => {
+      // A user may have already clicked into a field before the opening timer
+      // fires. Do not steal that focus and interrupt their typing.
+      if (!element || element.contains(document.activeElement)) return
+      const initialFocus =
+        element.querySelector<HTMLElement>('[data-autofocus]') ?? focusables()[0] ?? element
+      initialFocus.focus()
+    }, 30)
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') onCloseRef.current()
       if (event.key === 'Tab') {

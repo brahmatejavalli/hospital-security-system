@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Button, Modal, Pagination, SearchInput, ToastProvider, useToast } from './ui'
 
@@ -30,6 +30,22 @@ describe('workspace interactions', () => {
     expect(close).toHaveBeenCalledOnce()
     await userEvent.click(screen.getByRole('button', { name: 'Close dialog' }))
     expect(close).toHaveBeenCalledTimes(2)
+  })
+  it('preserves field focus when the opening timer fires after user interaction', () => {
+    vi.useFakeTimers()
+    try {
+      render(
+        <Modal title="Upload a record" onClose={vi.fn()}>
+          <input aria-label="Patient reference ID" />
+        </Modal>,
+      )
+      const input = screen.getByRole('textbox', { name: 'Patient reference ID' })
+      input.focus()
+      act(() => vi.advanceTimersByTime(35))
+      expect(input).toHaveFocus()
+    } finally {
+      vi.useRealTimers()
+    }
   })
   it('supports clearing a search query', async () => {
     const change = vi.fn()

@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 BACKEND = Path(__file__).resolve().parents[1]
-ROOT = BACKEND.parents[1]
+ROOT = BACKEND.parent
 
 
 def configuration_process(tmp_path, **overrides):
@@ -52,8 +52,8 @@ def test_explicit_production_configuration_accepted(tmp_path):
     assert result.stdout.strip() == "configuration accepted"
 
 
-def test_backend_configuration_works_outside_the_nested_checkout(tmp_path):
-    # Docker places app/config.py directly in /app/app, not the original nested tree.
+def test_backend_configuration_works_outside_the_checkout(tmp_path):
+    # Docker places app/config.py directly in /app/app, without the repository root.
     package = tmp_path / "app"
     package.mkdir()
     (package / "__init__.py").write_text("")
@@ -83,7 +83,8 @@ def test_production_secret_generator_is_private_and_never_overwrites(tmp_path):
     assert len(values["SECRET_KEY"]) >= 32
     assert len(base64.b64decode(values["ENCRYPTION_KEY"])) == 32
     assert values["SECRET_KEY"] not in first.stdout
-    assert generated.stat().st_mode & 0o077 == 0
+    if os.name != "nt":  # Windows permissions are governed by NTFS ACLs.
+        assert generated.stat().st_mode & 0o077 == 0
     second = subprocess.run([sys.executable, str(script)], capture_output=True, text=True)
     assert second.returncode != 0 and generated.read_text() == original
 

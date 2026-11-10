@@ -8,8 +8,12 @@ const python =
   process.env.PYTHON ||
   path.join(root, '.venv', process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python')
 if (!existsSync(python) && !process.env.PYTHON) {
+  const installCommand =
+    process.platform === 'win32'
+      ? '.\\.venv\\Scripts\\python.exe -m pip install -r backend\\requirements.txt'
+      : '.venv/bin/python -m pip install -r backend/requirements.txt'
   console.error(
-    'Python environment not found. Run: python -m venv .venv && .venv/bin/pip install -r hospital-security-system/hospital-security-system/requirements.txt',
+    `Python environment not found. From the project root, run:\npython -m venv .venv\n${installCommand}`,
   )
   process.exit(1)
 }
@@ -29,7 +33,7 @@ const children = [
       '--reload',
       '--no-proxy-headers',
     ],
-    { cwd: path.join(root, 'hospital-security-system/hospital-security-system'), stdio: 'inherit' },
+    { cwd: path.join(root, 'backend'), stdio: 'inherit' },
   ),
   spawn(
     process.execPath,

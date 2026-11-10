@@ -1,5 +1,7 @@
 .git
-.venv
+.venv*
+venv
+env
 node_modules
 .cache
 .pytest_cache
@@ -12,3 +14,7 @@ node_modules
 frontend/dist
 playwright-report
 test-results
+
+# Legacy private files and a transient layout-migration lock
+hospital-security-system/
+backend/.layout-migration.lock

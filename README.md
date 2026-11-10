@@ -36,39 +36,68 @@ Permissions are enforced on the server. Auditors can inspect metadata, **not fil
 
 ## Quick start
 
-Requirements: **Python 3.11+**, **Node.js 22.12+**, and npm. No AWS account, external database, or `.env` file is needed for local development.
+Requirements: **Python 3.11+**, **Node.js 22.12+**, and npm. No AWS account, external database, or `.env` file is needed for local development. The CI configuration checks Python 3.11 on Linux and Python 3.14 on Windows; verify other Python versions with the test suite rather than assuming compatibility.
 
-From the **repository root**:
+Run commands from the **repository root**: the folder containing `package.json`, `backend/`, and `frontend/`. Do not run the setup inside either application folder.
+
+### Windows PowerShell
+
+Use your installed `python` command; no exact Python patch version or environment activation is required. Run each command separately and stop if one fails.
+
+```powershell
+python --version
+node --version
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r backend\requirements-dev.txt
+npm.cmd ci
+npm.cmd run dev
+```
+
+`npm.cmd` avoids PowerShell script-execution-policy issues. The Python version printed by `python --version` is **output**, not another command. If a version-specific `py` command reports “No suitable Python runtime found,” use `python --version` to identify the interpreter actually installed before selecting one.
+
+### macOS / Linux
 
 ```bash
 python -m venv .venv
-.venv/bin/pip install -r hospital-security-system/hospital-security-system/requirements-dev.txt
+.venv/bin/python -m pip install -r backend/requirements-dev.txt
 npm ci
 npm run dev
 ```
 
-Open **http://localhost:5173**. The API runs on port **8000**, with interactive docs at **http://localhost:5173/api/docs**. Both services bind to `0.0.0.0`; the frontend uses same-origin `/api` requests and Vite’s proxy, including in hosted previews.
+If your system provides only `python3`, use `python3 -m venv .venv` for the first command. `requirements-dev.txt` includes runtime dependencies and test tools; for runtime only, use `backend/requirements.txt` instead.
 
-On Windows, use `.venv\Scripts\python.exe -m pip ...` for the Python installation command. The Node development launcher detects the Windows virtual-environment path automatically. An existing Python executable can be selected with `PYTHON`.
+Open **http://localhost:5173** and keep the terminal running. Press **Ctrl+C** to stop both services. The API runs on port **8000**, with interactive docs at **http://localhost:5173/api/docs**. Both services bind to `0.0.0.0`; the frontend uses same-origin `/api` requests and Vite’s proxy, including in hosted previews. An existing Python executable can be selected with `PYTHON`.
+
+**Already ran an older version?** Stop it, back up its database/objects/keys, and follow [Upgrading the old folder layout](docs/UPGRADING.md) **before** starting this version. Git does not move ignored private runtime files.
 
 The first launch creates:
 
 - 128 synthetic, valid PDF records, encrypted before storage;
 - 12 synthetic staff accounts (11 active);
 - 14 days of clearly marked sample history and five sample alerts;
-- a private local SQLite database, object directory, and generated development keys under `hospital-security-system/hospital-security-system/data/`.
+- a private local SQLite database, object directory, and generated development keys under `backend/data/`.
 
 All runtime data, keys, dependencies, and generated bundles are ignored by Git. The demo persists across restarts. Signing out stays signed out in that browser tab; use **Explore demo workspace** to re-enter. Real test accounts use the normal email/password sign-in form.
 
 ### Run the built application on one port
 
-```bash
-npm run build
-cd hospital-security-system/hospital-security-system
-../../.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --no-proxy-headers
+From the repository root, on Windows PowerShell:
+
+```powershell
+npm.cmd run build
+cd backend
+..\.venv\Scripts\python.exe -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --no-proxy-headers
 ```
 
-FastAPI then serves the built frontend, API, and SPA routes on port 8000. This command is still a development/demo deployment unless production environment variables are explicitly set.
+On macOS/Linux:
+
+```bash
+npm run build
+cd backend
+../.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --no-proxy-headers
+```
+
+FastAPI then serves the built frontend, API, and SPA routes at **http://localhost:8000**. This is still a development/demo deployment unless production environment variables are explicitly set. See the [backend guide](backend/README.md) for API-only startup.
 
 ## Production configuration & Docker
 
@@ -80,7 +109,7 @@ FastAPI then serves the built frontend, API, and SPA routes on port 8000. This c
    python scripts/configure-production.py
    ```
 
-   This writes an ignored, mode-600 `.env.production`. It never overwrites existing keys. Back it up in an approved secret store. Add your public hostname to `TRUSTED_HOSTS`.
+   This writes an ignored `.env.production` (mode 600 on POSIX; restrict its NTFS ACLs on Windows). It never overwrites existing keys. Back it up in an approved secret store. Add your public hostname to `TRUSTED_HOSTS`.
 
 2. Build and provision the first administrator:
 
@@ -100,7 +129,7 @@ FastAPI then serves the built frontend, API, and SPA routes on port 8000. This c
 
    The application listens on port 8000 and stores data in the `medguard_data` volume. Production sessions use `Secure` cookies and require HTTPS for browser sign-in; plain HTTP is only suitable for the public health check. Back up the volume **and** encryption key. Never use `docker compose down -v` on data you need to retain.
 
-Docker builds the frontend and serves it from FastAPI as a non-root user. Compose enables a read-only root filesystem, drops Linux capabilities, and persists only the data volume. The legacy nested Dockerfile remains API-only; use the root configuration for the full application.
+Docker builds the frontend and serves it from FastAPI as a non-root user. Compose enables a read-only root filesystem, drops Linux capabilities, and persists only the data volume. The duplicate nested Docker/Compose files have been removed; the root files are the single deployment configuration. Preserve the existing Compose project name/volume when upgrading; see [UPGRADING.md](docs/UPGRADING.md#docker-deployments).
 
 ### Environment reference
 
@@ -132,8 +161,8 @@ The application initializes its **v1 schema for fresh databases**. It does not s
 .venv/bin/python -m pytest -q
 
 # Python lint and formatting
-.venv/bin/ruff check hospital-security-system/hospital-security-system scripts/configure-production.py
-.venv/bin/ruff format --check hospital-security-system/hospital-security-system scripts/configure-production.py
+.venv/bin/ruff check backend scripts
+.venv/bin/ruff format --check backend scripts
 
 # Frontend unit/component tests, TypeScript check, production build
 npm run format:check
@@ -145,6 +174,8 @@ npm audit --audit-level=high
 npx playwright install --with-deps chromium
 npm run test:e2e
 ```
+
+On Windows, run backend tests with `.\.venv\Scripts\python.exe -m pytest -q`, Ruff with `.\.venv\Scripts\python.exe -m ruff check backend scripts`, and npm commands with `npm.cmd`.
 
 Browser tests automatically start an **isolated temporary demo** on ports 5174/8001 and remove its data afterward. They do not mutate your development database. Use `CHROMIUM_EXECUTABLE_PATH` for an already installed compatible Chromium, or `E2E_BASE_URL` to explicitly test a separate disposable server. Automated accessibility checks do not replace manual accessibility testing.
 
@@ -174,19 +205,28 @@ The API accepts HttpOnly cookie sessions or the bearer token returned by normal 
 
 Legacy `/user/login`, `/user/register`, and `/file/upload` routes remain as deprecated, **policy-protected** aliases. Public registration is intentionally removed; legacy uploads now require record metadata and return record details, not ciphertext.
 
-## Structure
+## Project structure
 
 ```text
-frontend/                         React, TypeScript, components, pages, unit tests
-hospital-security-system/
-  hospital-security-system/
-    app/                          FastAPI, models, policies, encryption, storage
-    tests/                        Isolated backend tests
-    manage.py                     Secure initial administrator provisioning
-e2e/                              Browser workflows and accessibility checks
-scripts/                          Development/test runners and production configuration
-Dockerfile, docker-compose.yml    Full-stack production packaging
-.github/workflows/ci.yml          Build, test, audit, and accessibility workflow
+backend/                      FastAPI application, Python dependencies, backend tests
+frontend/                     React application, public assets, frontend unit tests
+e2e/                          Browser workflows and accessibility checks
+scripts/                      Startup, testing, production setup, layout migration
+docs/                         Architecture, file ownership, upgrade instructions
+.github/workflows/            CI checks (Linux and Windows)
+Dockerfile                    Single full-stack image definition
+docker-compose.yml            Single production Compose configuration
+package.json, package-lock.json  Shared Node dependencies and commands
+pyproject.toml                Shared Python test discovery and lint configuration
+README.md, SECURITY.md        Main setup and security documentation
 ```
 
-See [Architecture](docs/ARCHITECTURE.md) for data flows and important implementation limits. Licensed under [MIT](LICENSE).
+Application source is no longer buried in duplicate `hospital-security-system` directories. Root configuration files stay at the root intentionally; generated data/dependencies/builds are ignored.
+
+- [Complete file map](docs/PROJECT_STRUCTURE.md)
+- [Backend guide](backend/README.md) · [Frontend guide](frontend/README.md)
+- [Architecture and data flows](docs/ARCHITECTURE.md)
+- [Upgrading an existing workspace](docs/UPGRADING.md)
+- [Security boundaries and deployment checklist](SECURITY.md)
+
+Licensed under [MIT](LICENSE).

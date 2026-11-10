@@ -1,6 +1,6 @@
 [tool.pytest.ini_options]
-testpaths = ["hospital-security-system/hospital-security-system/tests"]
-pythonpath = ["hospital-security-system/hospital-security-system"]
+testpaths = ["backend/tests"]
+pythonpath = ["backend"]
 
 [tool.ruff]
 target-version = "py311"
